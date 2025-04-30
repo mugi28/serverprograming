@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">지출 분석</h2>
+
+    <div class="row">
+        <!-- 월별 지출 요약 -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">이번 달 지출</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 카테고리별 지출 -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">카테고리별 지출</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 연간 지출 추이 -->
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">연간 지출 추이</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="yearlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 지출 상세 내역 -->
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">지출 상세 내역</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>서비스</th>
+                                    <th>비용</th>
+                                    <th>결제 주기</th>
+                                    <th>다음 결제일</th>
+                                    <th>연간 비용</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expenseDetails">
+                                <!-- 데이터가 동적으로 로드됩니다 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 차트 데이터 로드 및 초기화
+document.addEventListener('DOMContentLoaded', function() {
+    loadMonthlyData();
+    loadCategoryData();
+    loadYearlyData();
+    loadExpenseDetails();
+});
+
+// 월별 지출 데이터 로드
+function loadMonthlyData() {
+    fetch('/analysis/monthly')
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('monthlyChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['총 지출', '남은 예산'],
+                    datasets: [{
+                        data: [data.total_cost, data.budget_remaining],
+                        backgroundColor: ['#ff6384', '#36a2eb']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '이번 달 지출 현황'
+                        }
+                    }
+                }
+            });
+        });
+}
+
+// 카테고리별 지출 데이터 로드
+function loadCategoryData() {
+    fetch('/analysis/category')
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: data.map(item => item.service),
+                    datasets: [{
+                        data: data.map(item => item.cost),
+                        backgroundColor: [
+                            '#ff6384',
+                            '#36a2eb',
+                            '#cc65fe',
+                            '#ffce56',
+                            '#4bc0c0'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '카테고리별 지출 비율'
+                        }
+                    }
+                }
+            });
+        });
+}
+
+// 연간 지출 추이 데이터 로드
+function loadYearlyData() {
+    fetch('/analysis/yearly')
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('yearlyChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(item => item.month),
+                    datasets: [{
+                        label: '월별 지출',
+                        data: data.map(item => item.cost),
+                        borderColor: '#36a2eb',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '연간 지출 추이'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
+}
+
+// 지출 상세 내역 로드
+function loadExpenseDetails() {
+    fetch('/analysis/details')
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.getElementById('expenseDetails');
+            tbody.innerHTML = data.map(item => `
+                <tr>
+                    <td>${item.service_name}</td>
+                    <td>${item.cost}원</td>
+                    <td>${item.cycle}</td>
+                    <td>${item.next_payment_date}</td>
+                    <td>${item.yearly_cost}원</td>
+                </tr>
+            `).join('');
+        });
+}
+</script>
+{% endblock %} 

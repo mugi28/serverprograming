@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>구독 서비스 목록</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSubscriptionModal">
+            <i class="fas fa-plus"></i> 새 구독 추가
+        </button>
+    </div>
+
+    <div class="row">
+        {% for subscription in subscriptions %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ subscription.service_name }}</h5>
+                    <p class="card-text">
+                        <strong>비용:</strong> {{ "%.2f"|format(subscription.cost) }}원<br>
+                        <strong>결제 주기:</strong> {{ subscription.cycle }}<br>
+                        <strong>결제일:</strong> {{ subscription.payment_date.strftime('%Y-%m-%d') }}<br>
+                        <strong>결제 수단:</strong> {{ subscription.payment_method }}
+                    </p>
+                    <div class="btn-group">
+                        <button class="btn btn-outline-primary btn-sm" 
+                                onclick="editSubscription({{ subscription.id }})">
+                            <i class="fas fa-edit"></i> 수정
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" 
+                                onclick="deleteSubscription({{ subscription.id }})">
+                            <i class="fas fa-trash"></i> 삭제
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- 구독 추가 모달 -->
+<div class="modal fade" id="addSubscriptionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">새 구독 추가</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addSubscriptionForm">
+                    <div class="mb-3">
+                        <label class="form-label">서비스 이름</label>
+                        <input type="text" class="form-control" name="service_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">비용</label>
+                        <input type="number" class="form-control" name="cost" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">결제 주기</label>
+                        <select class="form-select" name="cycle" required>
+                            <option value="monthly">월간</option>
+                            <option value="yearly">연간</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">결제일</label>
+                        <input type="date" class="form-control" name="payment_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">결제 수단</label>
+                        <select class="form-select" name="payment_method" required>
+                            <option value="credit_card">신용카드</option>
+                            <option value="bank_transfer">계좌이체</option>
+                            <option value="paypal">페이팔</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" onclick="submitSubscription()">추가</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function submitSubscription() {
+    const form = document.getElementById('addSubscriptionForm');
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    fetch('/subscribe/add', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            location.reload();
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function editSubscription(id) {
+    // 수정 로직 구현
+}
+
+function deleteSubscription(id) {
+    if (confirm('정말로 이 구독을 삭제하시겠습니까?')) {
+        fetch(`/subscribe/delete/${id}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                location.reload();
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+}
+</script>
+{% endblock %} 
