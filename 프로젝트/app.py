@@ -20,11 +20,12 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
 # Flask-Mail 설정
-app.config['MAIL_SERVER'] = 'localhost'
-app.config['MAIL_PORT'] = 8025
-app.config['MAIL_SUPPRESS_SEND'] = False  # False로 설정하면 실제 전송을 억제
-app.config['MAIL_DEBUG'] = True
-
+app.config['MAIL_SERVER'] = 'smtp.mailtrap.io'
+app.config['MAIL_PORT'] = 2525
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'bb03afa2d89e41')  # Mailtrap 사용자 이름
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', '35b62b9935c661')  # Mailtrap 비밀번호
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
 mail = Mail(app)
 
 
