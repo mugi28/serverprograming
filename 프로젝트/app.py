@@ -8,12 +8,34 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import traceback
 
 from models import db, User, Subscription, Notification, SharedSubscription, Budget
+from flask_mail import Mail, Message
+from flask_apscheduler import APScheduler
+
 
 load_dotenv()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'mysql://root:0328@localhost/subscription_db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+
+# Flask-Mail 설정
+app.config['MAIL_SERVER'] = 'localhost'
+app.config['MAIL_PORT'] = 8025
+app.config['MAIL_SUPPRESS_SEND'] = False  # False로 설정하면 실제 전송을 억제
+app.config['MAIL_DEBUG'] = True
+
+mail = Mail(app)
+
+
+scheduler = APScheduler()
+
+@scheduler.task('interval', id='payment_reminder', hours=24)  # 하루에 한 번 실행
+def scheduled_task():
+    send_payment_reminders()
+
+scheduler.init_app(app)
+scheduler.start()
 
 db.init_app(app)
 login_manager = LoginManager()
@@ -214,6 +236,65 @@ def visualization():
 def logout():
     logout_user()
     return redirect(url_for('index'))
+
+@scheduler.task('interval', id='update_payment_dates', hours=24)  # 하루에 한 번 실행
+def update_payment_dates():
+    with app.app_context():
+        subscriptions = Subscription.query.all()
+        for sub in subscriptions:
+            sub.update_payment_date()
+        db.session.commit()
+        print("결제일이 업데이트되었습니다.")
+# 테스트중 ----------------------------------------------------------------------------------------------------------------------------------
+@app.route('/update-payment-dates')
+def update_payment_dates_route():
+    try:
+        with app.app_context():
+            subscriptions = Subscription.query.all()
+            for sub in subscriptions:
+                sub.update_payment_date()
+            db.session.commit()
+        return "결제일이 업데이트되었습니다."
+    except Exception as e:
+        return f"결제일 업데이트 중 오류 발생: {e}"
+
+@app.route('/test-email')
+def test_email():
+    try:
+        send_payment_reminders()
+        return "이메일 알림 테스트가 완료되었습니다. 터미널 로그를 확인하세요."
+    except Exception as e:
+        return f"테스트 중 오류 발생: {e}"
+
+from datetime import datetime, timedelta
+
+def send_payment_reminders():
+    with app.app_context():
+        today = datetime.now().date()
+        # 결제일이 오늘부터 3일 이내인 구독 검색
+        upcoming_subscriptions = Subscription.query.filter(
+            Subscription.payment_date >= today,
+            Subscription.payment_date <= today + timedelta(days=3)
+        ).all()
+
+        for sub in upcoming_subscriptions:
+            user = User.query.get(sub.user_id)  # 구독의 사용자 가져오기
+            if user:
+                try:
+                    # 이메일 메시지 생성
+                    msg = Message(
+                        subject=f"결제일 알림: {sub.service_name}",
+                        sender=app.config['MAIL_USERNAME'],  # 발신자 이메일
+                        recipients=[user.email],  # 사용자의 이메일
+                        body=f"안녕하세요, {user.username}님!\n\n"
+                             f"구독 중인 '{sub.service_name}'의 결제일이 {sub.payment_date}로 다가오고 있습니다.\n"
+                             f"결제 금액: {sub.cost}원\n\n"
+                             f"감사합니다."
+                    )
+                    mail.send(msg)  # 이메일 전송
+                    print(f"알림 이메일이 {user.email}로 전송되었습니다.")
+                except Exception as e:
+                    print(f"이메일 전송 실패: {e}")
 
 if __name__ == '__main__':
     with app.app_context():

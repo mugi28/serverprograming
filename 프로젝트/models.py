@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
+from datetime import datetime, timedelta
 
 db = SQLAlchemy()
 
@@ -19,6 +20,15 @@ class Subscription(db.Model):
     payment_date = db.Column(db.Date, nullable=False)
     payment_method = db.Column(db.String(50), nullable=False)
 
+    def update_payment_date(self):
+        """결제일이 현재 날짜보다 이전이면 다음 결제일로 업데이트"""
+        today = datetime.now().date()
+        if self.payment_date < today:
+            if self.cycle == 'monthly':
+                self.payment_date = self.payment_date + timedelta(days=30)
+            elif self.cycle == 'yearly':
+                self.payment_date = self.payment_date + timedelta(days=365)
+
 class Notification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     subscription_id = db.Column(db.Integer, db.ForeignKey('subscription.id'), nullable=False)
@@ -34,4 +44,4 @@ class SharedSubscription(db.Model):
 class Budget(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    monthly_limit = db.Column(db.Float, nullable=False) 
+    monthly_limit = db.Column(db.Float, nullable=False)
