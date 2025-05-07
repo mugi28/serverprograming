@@ -34,4 +34,5 @@ class SharedSubscription(db.Model):
 class Budget(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    monthly_limit = db.Column(db.Float, nullable=False) 
+    monthly_limit = db.Column(db.Float, nullable=False) # 월간 예산 한도
+    budget_month = db.Column(db.String(7), nullable=False)  # 적용 달 (형식: YYYY-MM)
