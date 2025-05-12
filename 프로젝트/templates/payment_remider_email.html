@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>결제일 알림</title>
+    <style>
+        body { font-family: 'Apple Gothic', sans-serif; }
+        .container { width: 80%; margin: 0 auto; padding: 20px; border: 1px solid #ccc; }
+        .header { background-color: #f0f0f0; padding: 10px; text-align: center; }
+        .content { margin-top: 20px; }
+        .footer { margin-top: 20px; font-size: 0.8em; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{{ service_name }} 결제 알림</h1>
+        </div>
+        <div class="content">
+            <p>안녕하세요, {{ username }}님!</p>
+            <p>구독 중인 '<strong>{{ service_name }}</strong>'의 결제일이 <strong>{{ payment_date }}</strong>로 다가오고 있습니다.</p>
+            <p>결제 금액: <strong>{{ cost }}원</strong></p>
+            <p>감사합니다.</p>
+        </div>
+        <div class="footer">
+            본 메일은 자동 발송되었습니다. 문의사항은 고객센터로 연락 주시기 바랍니다.
+        </div>
+    </div>
+</body>
+</html>

@@ -282,20 +282,41 @@ def send_payment_reminders():
             user = User.query.get(sub.user_id)  # 구독의 사용자 가져오기
             if user:
                 try:
+                    # 부트스트랩 스타일을 활용한 HTML 이메일 본문 생성
+                    html_body = f"""
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+                    </head>
+                    <body style="background-color: #f8f9fa; padding: 20px;">
+                        <div class="container" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); padding: 20px;">
+                            <h2 class="text-primary">안녕하세요, {user.username}님!</h2>
+                            <p>구독 중인 <strong>{sub.service_name}</strong>의 결제일이 <strong>{sub.payment_date}</strong>로 다가오고 있습니다.</p>
+                            <p><strong>결제 금액:</strong> {sub.cost}원</p>
+                            <hr>
+                            <p>결제 정보를 확인하시고, 문제가 있을 경우 고객센터로 문의해주세요.</p>
+                            <a href="https://yourwebsite.com" class="btn btn-primary" style="color: white; text-decoration: none;">구독 관리 페이지로 이동</a>
+                            <footer style="margin-top: 20px; font-size: 12px; color: gray; text-align: center;">
+                                <p>이 메일은 자동으로 발송된 메일입니다. 문의 사항이 있으시면 고객센터로 연락해주세요.</p>
+                            </footer>
+                        </div>
+                    </body>
+                    </html>
+                    """
+
                     # 이메일 메시지 생성
                     msg = Message(
                         subject=f"결제일 알림: {sub.service_name}",
                         sender=app.config['MAIL_USERNAME'],  # 발신자 이메일
                         recipients=[user.email],  # 사용자의 이메일
-                        body=f"안녕하세요, {user.username}님!\n\n"
-                             f"구독 중인 '{sub.service_name}'의 결제일이 {sub.payment_date}로 다가오고 있습니다.\n"
-                             f"결제 금액: {sub.cost}원\n\n"
-                             f"감사합니다."
+                        html=html_body  # HTML 본문 추가
                     )
                     mail.send(msg)  # 이메일 전송
                     print(f"알림 이메일이 {user.email}로 전송되었습니다.")
                 except Exception as e:
                     print(f"이메일 전송 실패: {e}")
+
 
 if __name__ == '__main__':
     with app.app_context():
