@@ -1,0 +1,23 @@
+{% extends 'subscriptions.html' %}
+{% block content %}
+<div class="container mt-5">
+    <h3>공동 구독 수정 - {{ subscription.service_name }}</h3>
+    <form method="POST">
+        <div class="mb-3">
+            <label class="form-label">참여자 선택</label>
+            <select name="shared_user_ids" class="form-select" multiple required>
+                {% for user in users %}
+                <option value="{{ user.id }}" {% if user.id in selected_ids %}selected{% endif %}>
+                    {{ user.username }}{% if user.id == current_user.id %} (나){% endif %}
+                </option>
+                {% endfor %}
+            </select>
+            <small class="text-muted">Ctrl(또는 Command) 키로 다중 선택</small>
+        </div>
+        <div class="d-flex justify-content-between">
+            <a href="{{ url_for('subscriptions') }}" class="btn btn-secondary">취소</a>
+            <button type="submit" class="btn btn-primary">저장</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
