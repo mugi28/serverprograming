@@ -40,9 +40,22 @@ class SharedSubscription(db.Model):
     subscription_id = db.Column(db.Integer, db.ForeignKey('subscription.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     split_amount = db.Column(db.Float, nullable=False)
+    payment_status = db.Column(db.String(20), nullable=False)
 
 class Budget(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    monthly_limit = db.Column(db.Float, nullable=False)
+    monthly_limit = db.Column(db.Float, nullable=False) # 월간 예산 한도
+    budget_month = db.Column(db.String(7), nullable=False)  # 적용 달 (형식: YYYY-MM)
+
+class History(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    service_name = db.Column(db.String(100), nullable=False)
+    cost = db.Column(db.Float, nullable=False)
+    cycle = db.Column(db.String(20), nullable=False)  # monthly/yearly
+    payment_date = db.Column(db.Date, nullable=False)
+    payment_method = db.Column(db.String(50), nullable=False)
+    added_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)    # 추가 시점
+    deleted_at = db.Column(db.DateTime, nullable=True)  # 삭제 시점(삭제 안됐으면 None)
 
